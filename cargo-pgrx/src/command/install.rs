@@ -110,6 +110,7 @@ impl CommandExecute for Install {
             None,
             &self.features,
             self.target.as_deref(),
+            None,
         )?;
         Ok(())
     }
@@ -147,6 +148,7 @@ pub(crate) fn install_extension(
     base_directory: Option<PathBuf>,
     features: &clap_cargo::Features,
     target: Option<&str>,
+    prefix_directory: Option<PathBuf>,
 ) -> eyre::Result<Vec<PathBuf>> {
     let mut output_tracking = Vec::new();
 
@@ -168,14 +170,26 @@ pub(crate) fn install_extension(
     println!("{} extension", "  Installing".bold().green());
     let shlibpath = find_library_file(&manifest, package_manifest_path, &build_command_messages)?;
 
+    let relative_extdir = if let Some(prefix_directory) = prefix_directory.as_ref() {
+        make_relative_extdir(prefix_directory.to_path_buf())
+    } else {
+        make_relative_extdir(pg_config.extension_dir()?)
+    };
+
+    let relative_pkglibdir = if let Some(prefix_directory) = prefix_directory.as_ref() {
+        make_relative_pkglibdir(prefix_directory.to_path_buf())
+    } else {
+        make_relative_pkglibdir(pg_config.pkglibdir()?)
+    };
+
     let extdir = if let Some(base_directory) = base_directory.as_ref() {
-        base_directory.join(make_relative_extdir(pg_config.extension_dir()?))
+        base_directory.join(relative_extdir)
     } else {
         pg_config.extension_dir()?
     };
 
     let pkglibdir = if let Some(base_directory) = base_directory.as_ref() {
-        base_directory.join(make_relative_pkglibdir(pg_config.pkglibdir()?))
+        base_directory.join(relative_pkglibdir)
     } else {
         pg_config.pkglibdir()?
     };

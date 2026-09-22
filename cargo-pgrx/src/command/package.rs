@@ -48,6 +48,9 @@ pub(crate) struct Package {
     pub(crate) target: Option<String>,
     #[clap(from_global, action = ArgAction::Count)]
     pub(crate) verbose: u8,
+    /// The directory within out_dir to put extension assets (default is based on pg_config path)
+    #[clap(long, value_parser)]
+    pub(crate) prefix_dir: Option<PathBuf>,
 }
 
 impl Package {
@@ -96,6 +99,7 @@ impl Package {
             self.test,
             &self.features,
             self.target.as_deref(),
+            self.prefix_dir.clone(),
         )?;
 
         Ok((out_dir, output_files))
@@ -125,6 +129,7 @@ pub(crate) fn package_extension(
     is_test: bool,
     features: &clap_cargo::Features,
     target: Option<&str>,
+    prefix_dir: Option<PathBuf>,
 ) -> eyre::Result<Vec<PathBuf>> {
     let out_dir_exists = out_dir.try_exists().wrap_err_with(|| {
         format!("failed to access {} while packaging extension", out_dir.display())
@@ -144,6 +149,7 @@ pub(crate) fn package_extension(
         Some(out_dir),
         features,
         target,
+        prefix_dir,
     )
 }
 
